@@ -13,7 +13,8 @@ app.get("/search/:title", (req, res) => {
   });
 });
 app.get("/movie/:imdbID", (req, res) => {
-  scraper.getMovie(req.params.title).then(movie => {
+  scraper.getMovie(req.params.imdbID).then(movie => {
+    console.log(req.params);
     res.json(movie);
   });
 });

@@ -29,10 +29,49 @@ function getMovie(imdbID) {
   return fetch(`${movieUrl}${imdbID}`)
     .then(response => response.text())
     .then(body => {
-      console.log("====================================");
-      console.log(body);
-      console.log("====================================");
-      return { body };
+      const $ = cheerio.load(body);
+      const $title = $(".title_wrapper h1");
+      const title = $title
+        .first()
+        .contents()
+        .filter(function() {
+          return this.type === "text";
+        })
+        .text()
+        .trim();
+      const rating = $('meta[itemProp="contentRating"]').attr("content");
+      const runTime = $('time[itemProp="duration"]')
+        .first()
+        .contents()
+        .filter(function() {
+          return this.type === "text";
+        })
+        .text()
+        .trim();
+      const genres = [];
+      $('span[itemProp="genre"]').each(function(i, element) {
+        const genre = $(element);
+        const $genre = genre.text();
+        genres.push($genre);
+        return genres;
+      });
+      const datePublished = $('meta[itemProp="datePublished"]').attr("content");
+      const imdbRating = $('span[itemProp="ratingValue"]').text();
+      const poster = $('img[itemProp="image"]').attr("src");
+      const plot = $('div[class="summary_text"]')
+        .text()
+        .trim();
+      return {
+        imdbID,
+        title,
+        rating,
+        runTime,
+        genres,
+        datePublished,
+        imdbRating,
+        poster,
+        plot
+      };
     });
 }
 module.exports = {
