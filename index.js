@@ -1,9 +1,9 @@
 const fetch = require("node-fetch");
 const cheerio = require("cheerio");
 const express = require("express");
-const cors = require('cors');
+const cors = require("cors");
 const app = express();
-app.use(cors())
+app.use(cors());
 const scraper = require("./scraper");
 
 app.get("/", (req, res) => {
