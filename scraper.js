@@ -2,7 +2,15 @@ const cheerio = require("cheerio");
 const fetch = require("node-fetch");
 const searchUrl = "https://www.imdb.com/find?s=tt&ttype=ft&ref_=fn_ft&q=";
 const movieUrl = "https://www.imdb.com/title/";
+const movieCache = {};
+const searchCache = {};
 function searchMovies(searchTerm) {
+  if (searchCache[searchTerm]) {
+    console.log("====================================");
+    console.log(`serving from cache! ${searchTerm}`);
+    console.log("====================================");
+    return Promise.resolve(searchCache[searchTerm]);
+  }
   return fetch(`${searchUrl}${searchTerm}`)
     .then(res => res.text())
     .then(body => {
@@ -21,11 +29,17 @@ function searchMovies(searchTerm) {
         };
         movies.push(movie);
       });
-
+      searchCache[searchTerm] = movies;
       return movies;
     });
 }
 function getMovie(imdbID) {
+  if (movieCache[imdbID]) {
+    console.log("====================================");
+    console.log(`serving from cache! ${imdbID}`);
+    console.log("====================================");
+    return Promise.resolve(movieCache[imdbID]);
+  }
   return fetch(`${movieUrl}${imdbID}`)
     .then(response => response.text())
     .then(body => {
@@ -49,19 +63,32 @@ function getMovie(imdbID) {
         .text()
         .trim();
       const genres = [];
-      $('span[itemProp="genre"]').each(function(i, element) {
-        const genre = $(element);
-        const $genre = genre.text();
-        genres.push($genre);
-        return genres;
-      });
+      $('span[itemProp="genre"]').each(getItems(genres));
       const datePublished = $('meta[itemProp="datePublished"]').attr("content");
       const imdbRating = $('span[itemProp="ratingValue"]').text();
       const poster = $('img[itemProp="image"]').attr("src");
       const plot = $('div[class="summary_text"]')
         .text()
         .trim();
-      return {
+      const directors = [];
+      function getItems(itemArray) {
+        return function(i, element) {
+          const item = $(element)
+            .text()
+            .trim();
+          itemArray.push(item);
+        };
+      }
+      $('span[itemProp="director"]').each(getItems(directors));
+      const writers = [];
+      $('.credit_summary_item span[itemProp="creator"]').each(getItems(writers));
+      const stars = [];
+      $('.credit_summary_item span[itemProp="actors"]').each(getItems(stars));
+      const storyLine = $('span[itemProp="description"]')
+        .text()
+        .trim();
+      const trailer = $('a[itemProp="trailer"]').attr("href");
+      const movie = {
         imdbID,
         title,
         rating,
@@ -70,8 +97,15 @@ function getMovie(imdbID) {
         datePublished,
         imdbRating,
         poster,
-        plot
+        plot,
+        directors,
+        writers,
+        stars,
+        storyLine,
+        trailer: `https://www.imdb.com${trailer}`
       };
+      movieCache[imdbID] = movie;
+      return movie;
     });
 }
 module.exports = {
