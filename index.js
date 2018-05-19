@@ -1,11 +1,15 @@
 const fetch = require("node-fetch");
 const cheerio = require("cheerio");
 const express = require("express");
+const cors = require('cors');
 const app = express();
+app.use(cors())
 const scraper = require("./scraper");
 
 app.get("/", (req, res) => {
-  res.json({ message: "scaping is fun!" });
+  res.json({
+    message: "scaping is fun!"
+  });
 });
 app.get("/search/:title", (req, res) => {
   scraper.searchMovies(req.params.title).then(movies => {
